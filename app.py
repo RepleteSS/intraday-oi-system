@@ -19,9 +19,35 @@ session = requests.Session()
 session.get("https://www.nseindia.com", headers=HEADERS)
 
 def fetch_option_chain(symbol):
-    url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
-    response = session.get(url, headers=HEADERS)
-    return response.json()
+    base_url = "https://www.nseindia.com"
+    api_url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept": "application/json",
+        "Connection": "keep-alive"
+    }
+
+    session = requests.Session()
+
+    # Step 1: Visit homepage to get cookies
+    session.get(base_url, headers=headers, timeout=10)
+
+    # Step 2: Call API using same session
+    response = session.get(api_url, headers=headers, timeout=10)
+
+    if response.status_code != 200:
+        raise Exception(f"NSE API blocked or failed: {response.status_code}")
+
+    data = response.json()
+
+    # Safety check
+    if "records" not in data:
+        raise Exception("NSE returned unexpected response. Possibly blocked.")
+
+    return data
 
 def process_data(data):
     records = data['records']['data']
